@@ -1,0 +1,3 @@
+module SelfPropelledModel
+
+end # module
