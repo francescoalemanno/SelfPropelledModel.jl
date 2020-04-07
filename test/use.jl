@@ -23,4 +23,7 @@ frames=[readdlm("results/$i.txt")'|>collect for i in 1:170]
 
 specs = SPT(maxtimegap=10.0,maxdist=10.0,dims=2,rest=0,verbose=true)
 
-track(specs,frames)
+tr=track(specs,frames)
+for i in 1:100
+    plot(tr[i][2,:],tr[i][3,:])
+end
