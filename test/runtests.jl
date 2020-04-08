@@ -47,6 +47,42 @@ function tohdsim(Np,Nf)
     AR=foldl(hcat,[x...] for x in R)'
     writedlm("results/P$(Np)_F$(Nf).dat",AR)
 end
-for p in [20,40,60,80,100,120,140,160]
+Ns=[20,40,60,80,100,120,140,160]
+for p in Ns
     tohdsim(p,170)
 end
+
+
+using PyPlot
+using PyCall
+cd(dirname(@__FILE__));
+include("mplstyle.jl")
+cd("../results")
+
+pygui(true)
+matplotlibstyle()
+
+A=[(N,readdlm("P$(N)_F170.dat")) for N in Ns]
+using Statistics
+avgA=foldl(hcat,[N,Statistics.mean(x,dims=1)...,std(x,dims=1)...] for (N,x) in A)
+
+py"setfonts(10)"
+figure(figsize=py"mplfigsize(1)",dpi=300)
+errorbar(avgA[1,:],avgA[2,:],yerr=avgA[4,:]/10,fmt="o",lw=1,color="black",
+    markersize=2,markeredgewidth=1,marker="s",markerfacecolor="None",
+    markeredgecolor=(0, 0, 0, 0.5))
+xticks(Ns)
+xlabel(L"N^\circ \rm{particles}")
+ylabel(L"N^\circ \rm{erroneous\,\,tracks}")
+tight_layout()
+savefig("n_errors_vs_n_particles.pdf")
+
+figure(figsize=py"mplfigsize(1)",dpi=300)
+errorbar(avgA[1,:],avgA[3,:],yerr=avgA[5,:]/10,fmt="o",lw=1,color="black",
+    markersize=2,markeredgewidth=1,marker="s",markerfacecolor="None",
+    markeredgecolor=(0, 0, 0, 0.5))
+xticks(Ns)
+xlabel(L"N^\circ \rm{particles}")
+ylabel(L"\rm{Percentual\,\,errors\,\,}\%")
+tight_layout()
+savefig("rel_errors_vs_n_particles.pdf")
