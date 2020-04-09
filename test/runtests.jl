@@ -52,7 +52,7 @@ for p in Ns
     tohdsim(p,170)
 end
 
-
+using DelimitedFiles
 using PyPlot
 using PyCall
 cd(dirname(@__FILE__));
@@ -67,20 +67,20 @@ using Statistics
 avgA=foldl(hcat,[N,Statistics.mean(x,dims=1)...,std(x,dims=1)...] for (N,x) in A)
 
 py"setfonts(10)"
-figure(figsize=py"mplfigsize(1)",dpi=300)
-errorbar(avgA[1,:],avgA[2,:],yerr=avgA[4,:]/10,fmt="o",lw=1,color="black",
-    markersize=2,markeredgewidth=1,marker="s",markerfacecolor="None",
-    markeredgecolor=(0, 0, 0, 0.5))
+figure(figsize=py"mplfigsize(1)".*1.4,dpi=300)
+errorbar(avgA[1,:],avgA[2,:],yerr=avgA[4,:]/10,fmt="o",lw=1,color="royalblue",
+    markersize=4,markeredgewidth=1,marker="o",markerfacecolor="None",
+    markeredgecolor="royalblue")
 xticks(Ns)
 xlabel(L"N^\circ \rm{particles}")
 ylabel(L"N^\circ \rm{erroneous\,\,tracks}")
 tight_layout()
 savefig("n_errors_vs_n_particles.pdf")
 
-figure(figsize=py"mplfigsize(1)",dpi=300)
-errorbar(avgA[1,:],avgA[3,:],yerr=avgA[5,:]/10,fmt="o",lw=1,color="black",
-    markersize=2,markeredgewidth=1,marker="s",markerfacecolor="None",
-    markeredgecolor=(0, 0, 0, 0.5))
+figure(figsize=py"mplfigsize(1)".*1.4,dpi=300)
+errorbar(avgA[1,:],avgA[3,:],yerr=avgA[5,:]/10,fmt="o",lw=1,color="royalblue",
+    markersize=4,markeredgewidth=1,marker="o",markerfacecolor="None",
+    markeredgecolor="royalblue")
 xticks(Ns)
 xlabel(L"N^\circ \rm{particles}")
 ylabel(L"\rm{Percentual\,\,errors\,\,}\%")

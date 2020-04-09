@@ -4,7 +4,7 @@ using PyPlot
 include(dirname(@__FILE__)*"/mplstyle.jl")
 
 
-N=20
+N=160
 sv=sample_particles(N,()->500.0.*(rand(2).-0.5),()->(rand(2).-0.5))
 
 frames=[]
@@ -23,4 +23,5 @@ end
 xlim((-250,250))
 ylim((-250,250))
 tight_layout()
+title("N=$(N) particles")
 savefig("N$(N).pdf")
