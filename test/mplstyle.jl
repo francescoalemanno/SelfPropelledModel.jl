@@ -1,3 +1,5 @@
+using PyCall
+using PyPlot
 function matplotlibstyle()
     py"""
     from matplotlib import rcParams

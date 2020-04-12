@@ -19,7 +19,7 @@ function Particle(a_x,a_v)
     Particle(x,v,x,v)
 end
 
-function sqnorm(a) 
+function sqnorm(a)
     foldl((x,y)->x+y*y,a,init=zero(first(a)))
 end
 
@@ -71,8 +71,8 @@ function update_velocity(i::Int,P,α,γ,ρ)
     p=P[i]
     N=length(P)
     v0=sqrt(sqnorm(p.ov))
-    p_n=P[ifelse(i<N,i+1,i-2)]
-    p_b=P[ifelse(i>1,i-1,i+2)]
+    p_n=P[ifelse(i<N,i+1,1)]
+    p_b=P[ifelse(i>1,i-1,N)]
     η=randn(length(p.x))
     nvx=v0 .* θ(@.(α * p.ov + γ * (p_n.ov+p_b.ov)/2 + ρ*η)...)
     P[i]=Particle(p.x,nvx,p.ox,p.ov)

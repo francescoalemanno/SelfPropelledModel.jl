@@ -11,7 +11,7 @@ frames=[]
 for i in 1:170
     X=foldl(hcat,[[x...] for x in sv.x])
     push!(frames,X)
-    spm_step!(sv,0.4,0.2,0.2,1.5)
+    spm_step!(sv,0.4,0.2,0.1,1.5)
 end
 
 pts=PermutedDimsArray(cat(frames...,dims=3),(2,3,1))|>collect
