@@ -1,5 +1,4 @@
 module SelfPropelledModel
-using StructArrays
 using Random
 
 struct Particle{S}
@@ -32,8 +31,8 @@ end
 
 function dist(v)
     N=length(v)
-    d=zero(v.x[1][1])
-    m=zero(v.x[1][1])
+    d=zero(v[1].x[1])
+    m=zero(v[1].x[1])
     id=0
     for i in 2:(N-1)
         nd=sqnorm(v[i].x.-v[i+1].x)+sqnorm(v[i].x.-v[i-1].x)
@@ -94,7 +93,7 @@ function spm_step!(P,α,γ,ρ,Δt)
 end
 
 function sample_particles(N,x_sampler,v_sampler)
-    sv=StructArray(Particle(x_sampler(),v_sampler()) for i in 1:N)
+    sv=[Particle(x_sampler(),v_sampler()) for i in 1:N]
     optimize!(sv)
     optimize!(sv)
     sv

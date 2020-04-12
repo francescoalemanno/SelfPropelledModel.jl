@@ -9,7 +9,7 @@ sv=sample_particles(N,()->500.0.*(rand(2).-0.5),()->(rand(2).-0.5))
 
 frames=[]
 for i in 1:170
-    X=foldl(hcat,[[x...] for x in sv.x])
+    X=foldl(hcat,[[p.x...] for p in sv])
     push!(frames,X)
     spm_step!(sv,0.4,0.2,0.1,1.5)
 end
