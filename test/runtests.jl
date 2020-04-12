@@ -55,21 +55,22 @@ end
 using DelimitedFiles
 using PyPlot
 using PyCall
+using Statistics
 cd(dirname(@__FILE__));
 include("mplstyle.jl")
 cd("../results")
 
-pygui(true)
+pygui(false)
 matplotlibstyle()
-
+Ns=20:20:160
 A=[(N,readdlm("P$(N)_F170.dat")) for N in Ns]
-using Statistics
+
 avgA=foldl(hcat,[N,Statistics.mean(x,dims=1)...,std(x,dims=1)...] for (N,x) in A)
 
-py"setfonts(10)"
+py"setfonts(14)"
 figure(figsize=py"mplfigsize(1)".*1.4,dpi=300)
-errorbar(avgA[1,:],avgA[2,:],yerr=avgA[4,:]/10,fmt="o",lw=1,color="royalblue",
-    markersize=4,markeredgewidth=1,marker="o",markerfacecolor="None",
+errorbar(avgA[1,:],avgA[2,:],yerr=avgA[4,:]/10,fmt="o",lw=2,color="royalblue",
+    markersize=7,markeredgewidth=2,marker="o",markerfacecolor="None",
     markeredgecolor="royalblue")
 xticks(Ns)
 xlabel(L"N^\circ \rm{particles}")
@@ -78,8 +79,8 @@ tight_layout()
 savefig("n_errors_vs_n_particles.pdf")
 
 figure(figsize=py"mplfigsize(1)".*1.4,dpi=300)
-errorbar(avgA[1,:],avgA[3,:],yerr=avgA[5,:]/10,fmt="o",lw=1,color="royalblue",
-    markersize=4,markeredgewidth=1,marker="o",markerfacecolor="None",
+errorbar(avgA[1,:],avgA[3,:],yerr=avgA[5,:]/10,fmt="o",lw=2,color="royalblue",
+    markersize=7,markeredgewidth=2,marker="o",markerfacecolor="None",
     markeredgecolor="royalblue")
 xticks(Ns)
 xlabel(L"N^\circ \rm{particles}")
