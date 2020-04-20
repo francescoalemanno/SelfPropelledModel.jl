@@ -1,103 +1,112 @@
 module SelfPropelledModel
 using Random
 
-struct Particle{S}
+mutable struct Particle{S}
+    d::Int
+    class::Int
     x::S
     v::S
     ox::S
     ov::S
-end
-
-function Particle(x::A,v::A,ox::A,ov::A) where {N,T,A<:NTuple{N,T}}
-    Particle{A}(x,v,ox,ov)
-end
-
-function Particle(a_x,a_v)
-    x=Tuple(a_x)
-    v=Tuple(a_v)
-    Particle(x,v,x,v)
-end
-
-function sqnorm(a)
-    foldl((x,y)->x+y*y,a,init=zero(first(a)))
-end
-
-function θ(a,b)
-    n1=a*a
-    n2=b*b
-    ns=sqrt(n1+n2)
-    return a/ns,b/ns
-end
-
-function dist(v)
-    N=length(v)
-    d=zero(v[1].x[1])
-    m=zero(v[1].x[1])
-    id=0
-    for i in 2:(N-1)
-        nd=sqnorm(v[i].x.-v[i+1].x)+sqnorm(v[i].x.-v[i-1].x)
-        if nd>=d
-            id=i
-            d=nd
-        end
-        m+=nd
-    end
-    d,id,m/N
-end
-
-function optimize!(v)
-    for i in 1:(length(v)*length(v))
-        D,j,mD=dist(v)
-        r=rand(eachindex(v))
-        v[j],v[r]=v[r],v[j]
-        nD,nj,nmD=dist(v)
-        if nmD>mD && nD>D
-            v[j],v[r]=v[r],v[j]
-        end
-        r1=rand(eachindex(v))
-        r2=rand(eachindex(v))
-        v[j+1],v[r1]=v[r1],v[j+1]
-        v[j-1],v[r2]=v[r2],v[j-1]
-        nD,nj,nmD=dist(v)
-        if nmD>mD && nD>D
-            v[j-1],v[r2]=v[r2],v[j-1]
-            v[j+1],v[r1]=v[r1],v[j+1]
-        end
+    function Particle(x::A,v::A,ox::A,ov::A) where {A<:AbstractVector}
+        d1=length(x)
+        d2=length(v)
+        d3=length(ox)
+        d4=length(ov)
+        (d1==d2 && d3==d4 && d2==d3) || error("all arguments must have the same length.")
+        new{A}(d1,0,copy(x),copy(v),copy(ox),copy(ov))
     end
 end
 
-function update_velocity(i::Int,P,α,γ,ρ)
-    p=P[i]
-    N=length(P)
-    v0=sqrt(sqnorm(p.ov))
-    p_n=P[ifelse(i<N,i+1,1)]
-    p_b=P[ifelse(i>1,i-1,N)]
-    η=randn(length(p.x))
-    nvx=v0 .* θ(@.(α * p.ov + γ * (p_n.ov+p_b.ov)/2 + ρ*η)...)
-    P[i]=Particle(p.x,nvx,p.ox,p.ov)
+Particle(x,v)=Particle(x,v,x,v)
+
+mutable struct Params{T}
+    Ci::T
+    Ca::T
+    Cb::T
+    w::T
+    γ::T
+    δt::T
 end
 
-function update_position(i::Int,P,Δt)
-    p=P[i]
-    nx=p.x .+ p.v .* Δt
-    P[i]=Particle(nx,p.v,p.x,p.v)
+function params(;Ci=0.01,Ca=0.01,Cb=0.2,w=-2.0,γ=0.5,δt=0.5)
+    tpl=promote(Ci,Ca,Cb,w,γ,δt)
+    T=eltype(tpl)
+    Params{T}(tpl...)
 end
 
-function spm_step!(P,α,γ,ρ,Δt)
-    Threads.@threads for i in eachindex(P)
-        update_velocity(i,P,α,γ,ρ)
+
+using LinearAlgebra
+import Base.rand
+import Random.rand!
+Base.rand(::Type{Particle},d::Integer)=Particle(rand(d)*1000,randn(d)./sqrt(d))
+Base.rand(::Type{Particle})=rand(Particle,2)
+function Random.rand!(P::Particle)
+    randn!(P.v)
+    rand!(P.x)
+    P.x.*=1000
+    P.v./=sqrt(P.d)
+    P.ox.=P.x
+    P.ov.=P.v
+    P
+end
+
+function update_v!(params::Params,p::Particle,nc::AbstractVector{<:Particle})
+    p.v .= 0
+    ew=exp(-params.w)
+    for q in eachindex(nc)
+        p.x .= p.ox .- nc[q].ox
+        w = 1 / (1 + ew*abs2(norm(p.x)))
+        p.v .+= w .* ((nc[q].ov .- p.ov) .* params.Ci .+ (nc[q].ox .- p.ox) .* params.Ca)
     end
-    Threads.@threads for i in eachindex(P)
-        update_position(i,P,Δt)
+    sc=norm(p.v)
+    on=norm(p.ov)
+    randn!(p.x)
+    p.v .= p.ov .+ (params.δt * params.γ/sc) .* p.v  .+ params.Cb .* p.x
+    nn=norm(p.v)
+    p.v.*=on/nn
+end
+
+function update_x!(params::Params,p::Particle)
+    p.x .= p.ox .+ params.δt .* p.ov
+    p.ov .= p.v
+    p.ox .= p.x
+end
+
+function step!(params::Params,P::AbstractVector{<:Particle})
+    for i in eachindex(P)
+        update_v!(params,P[i],P)
+    end
+    for i in eachindex(P)
+        update_x!(params,P[i])
     end
 end
 
-function sample_particles(N,x_sampler,v_sampler)
-    sv=[Particle(x_sampler(),v_sampler()) for i in 1:N]
-    optimize!(sv)
-    optimize!(sv)
-    sv
+function getX(P::AbstractVector{<:Particle})
+    collect(foldl(hcat,getfield(p,:x) for p in P)')
 end
+
+par=params()
+par.Ca=0.05
+par.Ci=-0.05
+par.Cb=0.3
+
+V=[rand(Particle) for i in 1:100]
+step!(par,V)
+
+function steptest(par,V)
+    for i in 1:2000
+        step!(par,V)
+        f=getX(V)
+        scatter(f[:,1],f[:,2],color="blue",s=2)
+        sleep(0.1)
+    end
+end
+
+using PyPlot
+pygui(true)
+@time steptest(par,V)
+
 
 export sample_particles, spm_step!
 end # module
