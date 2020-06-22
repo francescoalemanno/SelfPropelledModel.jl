@@ -1,3 +1,0 @@
-# SelfPropelledModel
-
-*Documentation goes here.*
